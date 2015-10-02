@@ -1,14 +1,4 @@
 <?php
-/**
- * Groupclone Product
- * 
- * @category   Design
- * @package    default_greytheme
- * @copyright  Copyrights 2014 by Contus. (http://www.contus.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
- */
-?>
-<?php
 $this->license = Mage::registry('license1');
 if($this->license == '')
 {
@@ -49,7 +39,7 @@ if (empty($productIds)|| $dealstatus ==2) {
         if (typeof(ForeColor)=="undefined")
             ForeColor= "black";
         if (typeof(DisplayFormat)=="undefined")
-            DisplayFormat = "<span class='time_item day'><span class='number'>%%D%%</span><br/>DAYS</span><span class='time_item hour'><span class='number'>%%H%%</span><br/>HOURS</span> <span class='spacer_time'>:</span> <span class='time_item min'><span class='number'>%%M%%</span><br/>MINUTES</span> <span class='spacer_time'>:</span> <span class='time_item sec'><span class='number'>%%S%%</span><br/>SECONDS</span>";
+            DisplayFormat = "<span class='timer_icon'></span> <span class='time_item day'>%%D%%</span> <span class='time_item hour'>%%H%%</span> <span class='spacer_time'>:</span> <span class='time_item min'>%%M%%</span> <span class='spacer_time'>:</span> <span class='time_item sec'>%%S%%</span>";
         if (typeof(CountActive)=="undefined")
             CountActive = true;
         if (typeof(FinishMessage)=="undefined")
@@ -89,7 +79,7 @@ if (empty($productIds)|| $dealstatus ==2) {
             if(days == 00) {
                 DisplayStr = DisplayFormat.replace(/%%D%%/g, '<span class="nodays"></span>');
             } else {
-                DisplayStr = DisplayFormat.replace(/%%D%%/g, calcage(secs,86400,100000));
+                DisplayStr = DisplayFormat.replace(/%%D%%/g, calcage(secs,86400,100000)+' <?php echo $this->__('days');?>');
             }
             DisplayStr = DisplayStr.replace(/%%H%%/g, calcage(secs,3600, days));
             DisplayStr = DisplayStr.replace(/%%M%%/g, calcage(secs,60,60));
@@ -132,83 +122,274 @@ $select = $conn->select()
                      $videoId = $videoDetail['videoupload_id'];            	
                 }
                ?>
-                <div class="top_heading" style="margin">
+                <div class="top_heading">
                 <h1><?php echo $this->htmlEscape($_product->getName()) ?></h1>
+                <span class="sub_tittle"><?php echo $this->htmlEscape($_product->getSubtitle()) ?></span>
                 </div>
-			<fieldset class="no-display">
-				<input type="hidden" name="product" value="<?php echo $_product->getId() ?>" />
-			</fieldset>
-            <div class="right_column">
-			<span class="sub_tittle"><?php echo $this->htmlEscape($_product->getSubtitle()) ?></span><br/>
-			<?php
-			if($_product->getSpecialPrice()) {
-				$sp_price = $_product->getSpecialPrice();
-			} else {
-				$sp_price = $_product->getPrice();
-			}?>
-			<div><span style="font-size: 25px;margin-right:10px;"><sup><?php echo $this->__('NOW'); ?></sup></span> <b style="font-size: 40px; color:#d96709;" id="price_value-<?php echo $count; ?>" class="discounted-price"> <?php echo Mage::helper('core')->currency($sp_price, true);  ?> </b> <span style="font-size:18px;margin-left:10px;text-decoration: line-through;color: #888;">Before: <span id="value_box_span"><?php echo Mage::helper('core')->currency($_product->getPrice(), true, true) ?></span></span></div>
-			                            <!--Time box-->
+        <fieldset class="no-display">
+            <input type="hidden" name="product" value="<?php echo $_product->getId() ?>" />
+        </fieldset>
+            <div class="right_column">                           
+           <?php
+                            /* get video collection and display hdflvplayer. */
+                                       if ($videoId != '') {
+                                $productVideo = Mage::getStoreConfig('videoupload/frontend/default');
+                                if ($productVideo == 'video') {
+                                    $displayVideo = 'display:block;';
+                                    $displayImage = 'style="display:none"';
+                                } else if ($productVideo == 'image') {
+                                    $displayVideo = 'display:none;';
+                                    $displayImage = 'style="display:block;width: 460px; height: 279px;"';
+                                }
+                            } else {
+                                $displayVideo = 'display:none;';
+                                $displayImage = 'style="display:block;width: 460px; height: 279px;"';
+                            }
+                              if($videoId != '')
+                        {
+                            ?>
+               <div class="banner_middle " style="width: 460px; height: 279px; <?php echo $displayVideo; ?>" id='video-<?php echo $count; ?>'>
+                <div class='mediaspace'>
+                    <object id="player" classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,40,0" class="video_tag" >
+                        <param name="movie" value="<?php echo $this->getSkinUrl('hdflvplayer/hdplayer.swf'); ?>"/>
+                        <param name="flashvars" value="baserefM=<?php echo Mage::getBaseUrl(); ?>&amp;id=<?php echo $videoId; ?>&amp;pid=<?php echo $productId; ?>"/>
+                        <param name="allowFullScreen" value="true"/>
+                        <param name="wmode" value="transparent"/>
+                        <param name="allowscriptaccess" value="always"/>
+                        <param name="quality" value="high"/>                      
+
+                        <embed src="<?php echo $this->getSkinUrl('hdflvplayer/hdplayer.swf'); ?>" flashvars="baserefM=<?php echo Mage::getBaseUrl(); ?>&amp;id=<?php echo $videoId; ?>&amp;pid=<?php echo $productId; ?>" quality="high" allowfullscreen="true" allowscriptaccess="always" type="application/x-shockwave-flash" wmode="transparent" />                        
+                    </object>
+                </div>
+            </div>
+<?php
+                        }
+                        ?>
+            <div id="featured-<?php echo $count; ?>" <?php echo $displayImage; ?> >
+                <div class="banner_middle"  id='image-<?php echo $count; ?>'>
+                <?php if (count($_gallery) > 1) {
+                    foreach ($_gallery as $_image): ?>
+                                <?php $imageSrc = $this->helper('catalog/image')->init($this->getProduct(), 'image', $_image->getFile()); ?>
+                                <img src="<?php echo $imageSrc ?>" width="460" height="279" alt="<?php echo $this->htmlEscape($this->getImageLabel($_product, 'small_image')) ?>" title="<?php echo $this->htmlEscape($this->getImageLabel($_product, 'small_image')) ?>"  />
+                    <?php endforeach; ?>
+
+                <?php } else { ?>
+                                <img src="<?php echo $this->helper('catalog/image')->init($_product, 'image'); ?>" width="460" height="279" alt="<?php echo $this->htmlEscape($this->getImageLabel($_product, 'small_image')) ?>" title="<?php echo $this->htmlEscape($this->getImageLabel($_product, 'small_image')) ?>"  />
+                <?php } ?>
+                </div>
+            </div>                            
+            <?php if (count($_gallery) > 1) { ?>
+                    <script type="text/javascript">
+                        <!--
+                        $j('#featured-<?php echo $count; ?>').orbit({
+                            'bullets': true,
+                            'bulletid': <?php echo $count; ?>,
+                            'timer' : true,
+                            'animation' : 'fade',
+                            'captions' : false,
+                            'directionalNav' : false
+                        });
+                        //-->
+                    </script>
+            <?php } ?>
+            <?php if ($videoId != '') { ?>
+                            <div class="switch">
+                                <input class="change" type="button" value="<?php echo $this->__('Image'); ?>" id="switchImage-<?php echo $count; ?>" style="<?php
+                                    if ($productVideo == 'video') {
+                                        echo "display:block;";
+                                    } else {
+                                        echo "display:none;";
+                                } ?>" onclick="switchImage(<?php echo $count; ?>)" />
+                                <input class="change" type="button" value="<?php echo $this->__('Video');?>" id="switchVideo-<?php echo $count; ?>" style="<?php
+                                    if ($productVideo == 'image') {
+                                        echo "display:block;";
+                                    } else {
+                                        echo "display:none;";
+                                    }
+                        ?>" onclick="switchVideo(<?php echo $count; ?>)" />
+                                    </div>
+                <?php } ?>
+                </div>
+        <div class="left_column">
+            <div class="buy_pin" >
+                <div class="buy_value" id="price_div" >
+                    <small><?php echo $this->__('from'); ?></small>
+                        <?php
+                        if($_product->getSpecialPrice()) {
+                            $sp_price = $_product->getSpecialPrice();
+                        } else {
+                            $sp_price = $_product->getPrice();
+                        }?>
+                   <b id="price_value-<?php echo $count; ?>"> <?php echo Mage::helper('core')->currency($sp_price, true);  ?> </b>
+                </div>
+                <div class="buy_edge">
+                                   <?php   if($productQuantiy!=  '' || $productQuantiy != 0) { ?>
+                            <?php if($_product->getOptions()) { ?>                                
+                                    <a onclick="showCustomoptions();" href='JavaScript:void(0);' id="scriptbuynow-<?php echo $count; ?>" class="buynowbtn see_option"><?php echo $this->__("See Options") ?></a>                                
+                            <?php } else { ?>
+                                    <?php if($sp_price !=0){ ?>
+                                    <a href='<?php echo $this->helper('checkout/cart')->getAddUrl($_product); ?>' id="scriptbuynow-<?php echo $count; ?>" class="buynowbtn"><?php echo $this->__("Buy!") ?><span class="buy_arrow"></span></a>
+                                    <?php } else { ?>
+                                     <a href='<?php echo $this->helper('checkout/cart')->getAddUrl($_product); ?>' id="scriptbuynow-<?php echo $count; ?>" class="buynowbtn"><?php echo $this->__("Free!") ?><span class="buy_arrow"></span></a>
+                            <?php } }?>
+                    <?php } else { ?>
+                    <span class="sold_out">Sold Out</span>
+                    <?php } ?>
+                </div>               
+
+                <script type="text/javascript">
+                    function showCustomoptions() {
+                        document.getElementById('custom_options').style.display = "block";
+                        document.getElementById('bg_fade_gc').style.display = "block";                          
+                    }
+                    function hideCustomoptions() {
+                        document.getElementById('custom_options').style.display = "none";
+                        document.getElementById('bg_fade_gc').style.display = "none";
+                    }
+                </script>
+                
+                          
+
+                <div id="bg_fade_gc" onclick="hideCustomoptions();" style="opacity: 0.3; "></div>
+                <div class="clear"></div>
+            </div>
+            <div class="leftbox-gclone">                    
+<?php
+                $_gallery = $_product->getMediaGalleryImages();
+                $currentUrl = $this->helper('core/url')->getCurrentUrl();
+                $content = '&amp;';
+                $customersite = $_product->getcustomersite();
+                $highlight = $_product->gethightlight();
+                $fineprint = $_product->getFineprint();
+                $website = $_product->getCustomerWebsite();
+                $map = $_product->getsitemap();
+                $phone = $_product->getQuestions();
+                $_description = $_product->getdescription();
+                $renderDescription = $this->helper('catalog/output')->productAttribute($_product, $_description, 'description');
+                if (!$_product->isGrouped()) {
+                    if($_product->getSpecialPrice()) {
+                    $discount_price = $_product->getPrice() - $_product->getSpecialPrice();
+                    $discount = ($discount_price * 100) / $_product->getPrice();
+                    $discount = round($discount);
+                    } else {
+                        $discount_price = 0;
+                        $discount = 0;
+                    }
+?>
+                    <div class="discount-boxes clearfix" >                       
+                        <div class="clsdiscount_prices" id="value_box">
+                            <h3><?php echo $this->__('Value'); ?></h3>
+                            <span id="value_box_span"><?php echo Mage::helper('core')->currency($_product->getPrice(), true, true) ?></span>
+                        </div>
+                        <div class="clsdiscount_prices" id="discount_box">
+                            <h3><?php echo $this->__('Discount'); ?></h3>
+                            <span><?php echo $discount . '%'; ?></span>
+                        </div>
+                        <div class="clsdiscount_prices" id="save_box">
+                            <h3><?php echo $this->__('Save'); ?></h3>
+                            <span id="save_box_span"><?php echo Mage::helper('core')->currency($discount_price, true, true); ?></span>
+                        </div>
+                        
+                        <!-- Value box will disappear when digits exceed 7 -->                         
+                        <script type="text/javascript">
+                            value_width=document.getElementById('value_box_span').offsetWidth;
+                            save_width=document.getElementById('save_box_span').offsetWidth;
+                            if( (save_width>73)||(value_width>73) ){
+                               document.getElementById('value_box').style.display='none';
+                               document.getElementById('discount_box').style.width = "40%";
+                               document.getElementById('save_box').style.width = "60%";
+                            }
+                        </script>                     
+                        </div>
+                         
+                            <div class="clear"></div>
+                            <?php if(!$_product->getOptions()) { ?>
+                            <div class="gift_box clearfix" id ="script_gift_box<?php echo $count; ?>">
+                                <i></i>
+                                <div class="buy_friend">
+                                    <?php
+                                    if (!Mage::getSingleton('customer/session')->isLoggedIn()) {  // if not logged in
+                                            Mage::getSingleton('customer/session')->setBeforeAuthUrl($this->helper('checkout/cart')->getAddUrl($_product));
+                                            //redirect to login page
+                                            $url = Mage::getBaseUrl() . "customer/account/login/";
+                                            ?>
+                                    <a href="<?php echo $url; ?>" class="clsbuyfriend" ><?php echo $this->__('Give as a gift'); ?></a>
+                                    <?php } else { ?>
+                                    <form name="gift<?php echo $count; ?>" method="post" action="<?php echo $this->helper('checkout/cart')->getAddUrl($_product); ?>">
+                                        <fieldset>
+                                            <input type="hidden" name="giftoption" value="gift" />                                           
+                                            <a onclick="javascript:document.gift<?php echo $count; ?>.submit()" class="clsbuyfriend" ><?php echo $this->__('Give as a gift'); ?></a>
+                                        </fieldset> 
+                                    </form>
+                                    <?php } ?>
+                                </div>
+                            </div>
+<?php                       }                     
+                        }
+?>
+                 </div>                     
+            <?php 
+                            //Adding the products cartUrl,specialprice,identifier to the session
+                            Mage::getSingleton('core/session')->setSpecialPrice($_product->getSpecialPrice());
+                            Mage::getSingleton('core/session')->setAddtocart($this->getAddToCartUrl($_product));
+                            //End of Adding the products cartUrl,specialprice,identifier to the session
+            ?>
+                            <!--Time box-->
             <?php
-				//product's regular Price
-				$todayDate = Mage::getModel('catalog/product')->getResource()->formatDate($_product->getspecial_to_date(), false);
-				$expirydate = $todayDate . ' ' . $_product->gettime();
+                            //product's regular Price
+                            $todayDate = Mage::getModel('catalog/product')->getResource()->formatDate($_product->getspecial_to_date(), false);
+                            $expirydate = $todayDate . ' ' . $_product->gettime();
             ?>
 
-            <?php  if($productQuantiy != '' || $productQuantiy != 0) { ?>
-					<div class="timerbg_middle clearfix" style="border:none;">
-					<h3 style="text-align:center;color:#ff3030;font-size:22px;margin-top: -8px;">TIME LEFT TO BUY</h3>
-						<span class="corner_img"></span>
-						<div class="deal_statusnew" >
-							<div class="timerbox" >
-							  <div class="viraiterbg" id="viraiterbg">
-									<div id="countbox_<?php echo $count; ?>" class="cntdwn"></div>
-								</div>
-								<div class="deal_status" id ="deal_status-<?php echo $count; ?>"></div>
-							</div>
-						</div>
-					</div>
+            <?php  if($productQuantiy != '' || $productQuantiy != 0) { ?> 
+                            <div class="timerbg_middle clearfix">
+                                <span class="corner_img"></span>
+                                <div class="deal_statusnew" >
+                                    <h4><?php echo $this->__('Limited Time Only!'); ?></h4>
+                                    <div class="timerbox" >
+                                      <div class="viraiterbg" id="viraiterbg">
+                                            <div id="countbox_<?php echo $count; ?>" class="cntdwn"></div>
+                                        </div>
+                                        <div class="deal_status" id ="deal_status-<?php echo $count; ?>"></div>
+                                    </div>
+                                </div>
+                            </div>
             <?php } ?>
-			<div class="clear"></div>
-			<div class="buy_edge">
-					<?php   if($productQuantiy!=  '' || $productQuantiy != 0) { ?>
-						<?php if($_product->getOptions()) { ?>                                
-								<a onclick="showCustomoptions();" href='JavaScript:void(0);' id="scriptbuynow-<?php echo $count; ?>" class="buynowbtn see_option"><?php echo $this->__("See Options") ?></a>                                
-						<?php } else { ?>
-								<?php if($sp_price !=0){ ?>
-								<a href='<?php echo $this->helper('checkout/cart')->getAddUrl($_product); ?>' id="scriptbuynow-<?php echo $count; ?>" class="buynowbtn"><?php echo $this->__("BUY NOW!") ?><span class="buy_arrow"></span></a>
-								<?php } else { ?>
-								 <a href='<?php echo $this->helper('checkout/cart')->getAddUrl($_product); ?>' id="scriptbuynow-<?php echo $count; ?>" class="buynowbtn"><?php echo $this->__("Free!") ?><span class="buy_arrow"></span></a>
-						<?php } }?>
-				<?php } else { ?>
-				<span class="sold_out">Sold Out</span>
-				<?php } ?>
-			</div>
-			<div class="clear"></div>
-			<div style="width:50%;float:left;margin-top:10px;">
-			<div class="gift_box clearfix" id ="script_gift_box<?php echo $count; ?>">
-			<i></i>
-			<div class="buy_friend">
-				<?php
-					if (!Mage::getSingleton('customer/session')->isLoggedIn()) {  // if not logged in
-							Mage::getSingleton('customer/session')->setBeforeAuthUrl($this->helper('checkout/cart')->getAddUrl($_product));
-							//redirect to login page
-							$url = Mage::getBaseUrl() . "customer/account/login/";
-							?>
-					<a href="<?php echo $url; ?>" class="clsbuyfriend" ><?php echo $this->__('Give as a gift'); ?></a>
-					<?php } else { ?>
-					<form name="gift<?php echo $count; ?>" method="post" action="<?php echo $this->helper('checkout/cart')->getAddUrl($_product); ?>">
-						<fieldset>
-							<input type="hidden" name="giftoption" value="gift" />                                           
-							<a onclick="javascript:document.gift<?php echo $count; ?>.submit()" class="clsbuyfriend" ><?php echo $this->__('Give as a gift'); ?></a>
-						</fieldset> 
-					</form>
-					<?php } ?>
-				</div>
-			</div>
-			</div>
-			<div style="width:40%;float:left;margin-top:10px;padding-left: 30px;">
-			   <div class="spread clearfix">
-					<h3>Share This Deal:</h3>
+                            <!-- Deal Bought-->
+            <?php
+                            if (!$_product->isGrouped()) {
+                                $resultQuantity = $this->getQuantityPurchase($_product);
+                            }
+                            if($productQuantiy != '' || $productQuantiy != 0) { ?>
+                                <div class="dealstatus">
+                                    <h4><?php echo $this->__('Limited quantity available'); ?></h4>
+                                    <div class="totalcount"><span class="bought_icon"></span> <?php  if($_product->gettarget_number() != 0) { if($resultQuantity[0] > $_product->gettarget_number()) echo $this->__('Over'); } ?> <?php echo $resultQuantity[0]; ?> <?php echo $this->__('bought'); ?></div>
+<!--                                   <div class="deal_status" id ="deal_status-<?php echo $count; ?>">
+                                    <?php   if($_product->gettarget_number() != 0) { ?>
+                                            <div class="clsstatus"><?php echo $this->__($resultQuantity[2]); ?></div>
+                                        <?php } ?>
+                                    </div>-->
+                                </div>
+                            <?php } else { ?>
+                                <div class="dealstatus deal_status_out">
+                                    <h4><?php echo $this->__('Limited quantity available'); ?></h4>
+                                    <div class="totalcount"><span class="bought_icon"></span> <?php echo $this->__('Deal Sold Out'); ?></div>
+<!--                                    <div class="deal_status" id ="deal_status-<?php echo $count; ?>">
+                                            <img src="<?php echo $this->getSkinUrl('images/8.png') ?>"  width="180" height="16" alt="Rate" title="Rate"  class="statusimg"/>
+                                        <div class="clsstatus"><?php echo $this->__('Better luck next time'); ?></div>
+                                    </div>-->
+                                </div>
+                            <?php } ?>
+                            <!-- Deal Bought-->
+                           <?php // if(!$resultQuantity[0] == 0) { ;?>
+<!--                                <div class="check_mark clearfix">
+                                    <i class="deal_on"></i> 
+                                    <span><?php echo $this->__('The deal is on!'); ?> </span>
+                                </div>-->
+                            <?php // }
+                           ?>
+                            <div class="bottom-general clearfix">
+                                    <div class="spread clearfix">                                        
                     <?php
                                 // Prepare URL for the facebook dialog feed.
                                 $appId = Mage::getStoreConfig('customer/facebook/api_id');
@@ -253,90 +434,11 @@ $select = $conn->select()
                                  <a class="social_link pin-it-button"  title="Pinterest Share" href="http://pinterest.com/pin/create/button/?url=<?php echo $productUrl; ?>&amp;media=<?php echo $productImage;?>&amp;description=<?php echo $_product->getName(); ?>"  target="_blank"> </a>                                 
                             </span>
                         </div>
-				</div>
-		</div>
-        <div class="left_column">
-		  <div id="featured-<?php echo $count; ?>" <?php echo $displayImage; ?> >
-                <div class="banner_middle"  id='image-<?php echo $count; ?>'>
-                <?php if (count($_gallery) > 1) {
-                    foreach ($_gallery as $_image): ?>
-                                <?php $imageSrc = $this->helper('catalog/image')->init($this->getProduct(), 'image', $_image->getFile()); ?>
-                                <img src="<?php echo $imageSrc ?>" width="460" height="279" alt="<?php echo $this->htmlEscape($this->getImageLabel($_product, 'small_image')) ?>" title="<?php echo $this->htmlEscape($this->getImageLabel($_product, 'small_image')) ?>"  />
-                    <?php endforeach; ?>
+                    <!--Video and image switch code starts here-->
 
-                <?php } else { ?>
-                                <img src="<?php echo $this->helper('catalog/image')->init($_product, 'image'); ?>" width="460" height="279" alt="<?php echo $this->htmlEscape($this->getImageLabel($_product, 'small_image')) ?>" title="<?php echo $this->htmlEscape($this->getImageLabel($_product, 'small_image')) ?>"  />
-                <?php } ?>
-                </div>
-            </div>                            
-            <?php if (count($_gallery) > 1) { ?>
-                    <script type="text/javascript">
-                        <!--
-                        $j('#featured-<?php echo $count; ?>').orbit({
-                            'bullets': true,
-                            'bulletid': <?php echo $count; ?>,
-                            'timer' : true,
-                            'animation' : 'fade',
-                            'captions' : false,
-                            'directionalNav' : false
-                        });
-                        //-->
-                    </script>
-            <?php } ?>
-			<?php
-                    if($_product->getSpecialPrice()) {
-                    $discount_price = $_product->getPrice() - $_product->getSpecialPrice();
-                    $discount = ($discount_price * 100) / $_product->getPrice();
-                    $discount = round($discount);
-                    } else {
-                        $discount_price = 0;
-                        $discount = 0;
-                    }
-			?>
-			<div class="discount-boxes clearfix" >                       
-				<div class="clsdiscount_prices" id="value_box">
-					<span><?php echo $discount . '%'; ?></span>
-					<h3><?php echo $this->__('Discount'); ?></h3>
-				</div>
-				<div class="clsdiscount_prices" id="discount_box">
-            <?php
-			if (!$_product->isGrouped()) {
-				$resultQuantity = $this->getQuantityPurchase($_product);
-			}
-			if($productQuantiy != '' || $productQuantiy != 0) { ?>
-					<div class="totalcount"><?php  if($_product->gettarget_number() != 0) { if($resultQuantity[0] > $_product->gettarget_number()) echo $this->__('Over'); } ?> <?php echo $resultQuantity[0]; ?></div>
-<!--                                   <div class="deal_status" id ="deal_status-<?php echo $count; ?>">
-					<?php   if($_product->gettarget_number() != 0) { ?>
-							<div class="clsstatus"><?php echo $this->__($resultQuantity[2]); ?></div>
-						<?php } ?>
-					</div>-->
-			<?php } else { ?>
-					<div class="totalcount"></span> <?php echo $this->__('Deal Sold Out'); ?></div>
-<!--                                    <div class="deal_status" id ="deal_status-<?php echo $count; ?>">
-							<img src="<?php echo $this->getSkinUrl('images/8.png') ?>"  width="180" height="16" alt="Rate" title="Rate"  class="statusimg"/>
-						<div class="clsstatus"><?php echo $this->__('Better luck next time'); ?></div>
-					</div>-->
-			<?php } ?>
-				<span></span>
-				<h3><?php echo $this->__('Purchased'); ?></h3>
-				</div>
-				<div class="clsdiscount_prices" id="save_box">
-					<span id="save_box_span"><?php echo $productQuantiy; ?></span>
-					<h3><?php echo $this->__('Remaining'); ?></h3>
-				</div>
-				
-				<!-- Value box will disappear when digits exceed 7 -->                         
-				<script type="text/javascript">
-					value_width=document.getElementById('value_box_span').offsetWidth;
-					save_width=document.getElementById('save_box_span').offsetWidth;
-					if( (save_width>73)||(value_width>73) ){
-					   document.getElementById('value_box').style.display='none';
-					   document.getElementById('discount_box').style.width = "40%";
-					   document.getElementById('save_box').style.width = "60%";
-					}
-				</script>                     
-            </div>
-			</div>
+                <!--Video and image switch code starts here-->
+                                </div>
+                        </div>
                         <script type="text/javascript">
                             <!--
 
@@ -356,13 +458,25 @@ $select = $conn->select()
                             //-->
                         </script>
                         <!--End of Time box-->
+                        
+                        <!--Fine Print and Highlights-->
+                    <div class="deal_des_outer">
+                        <div class="clear"></div>
+                        <div class="highlights">
+                            <h3><?php echo $this->__('Highlights'); ?></h3>
+                           <div class="text_inner"> <?php echo $highlight; ?></div>
+                        </div>
+                        <div class="clsfineprint">
+                            <h3><?php echo $this->__('The Fine Print'); ?></h3>
+                            <div class="text_inner"><?php echo $fineprint; ?></div>
+                        </div>  
+                                                        
+                        <!--end of Fine Print and Highlights-->                                
+                        </div>                
+                    </div>
                 </div>
-				
                 <!--left content-->
                 <div class="clear"></div>
-				<div class="products-tabs">
-				
-				</div>
                 <!--contpad-->
                 <div class="reviewbox" id="review-<?php echo $count; ?>">
                                 <div class="col-main col-pad-bottom">
@@ -401,7 +515,7 @@ $select = $conn->select()
                         <?php endif; ?>
                             </div>
                         </div>
-					<div id="custom_options" style="display: none;">
+<div id="custom_options" style="display: none;">
                     <div id="custom_options_top">
                         <h3><?php echo $this->__('Choose your deal:'); ?></h3>
 						 <a  class="close custom_close" href="javascript:hideCustomoptions()"> <img src="<?php echo $this->getSkinUrl('images/btn_window_close.gif') ?>" alt="<?php echo $this->__('Close') ?>" width="16" height="16" title="<?php echo $this->__('close') ?>"  /></a>
@@ -463,98 +577,7 @@ $select = $conn->select()
                             }
                             ?>
                             </div>
-                </div>
-				<?php
-				$_gallery = $_product->getMediaGalleryImages();
-                $currentUrl = $this->helper('core/url')->getCurrentUrl();
-                $content = '&amp;';
-                $customersite = $_product->getcustomersite();
-                $highlight = $_product->gethightlight();
-                $fineprint = $_product->getFineprint();
-                $website = $_product->getCustomerWebsite();
-                $map = $_product->getsitemap();
-                $phone = $_product->getQuestions();
-                $_description = $_product->getdescription();
-				$renderDescription = $this->helper('catalog/output')->productAttribute($_product, $_description, 'description');
-				?>
-				<div class="clear"></div>
-				<?php 
-				$data = explode("-", $customersite);
-				?>
-				<div class="company-details">
-					<div class="col-4 first">
-						<span class="title-company bold">THE SELLER</span><br/>
-						<?php 
-						if(is_null($customersite)){
-							echo "No Seller";
-						}else{
-							echo $data[0]; 
-						}
-						?>
-					</div>
-					<div class="col-4">
-						<span class="title-company bold">SELLER REVIEW</span><br/>
-						<span>SELLER REVIEW</span><br/>
-					</div>
-					<div class="col-4 last">
-						<span class="title-company bold">LOCATION</span><br/>
-						<?php 
-						if(is_null($data[1])){
-							echo "No Location";
-						}else{
-							echo $data[1]; 
-						}
-						?>
-					</div>
-					<div></div>
-				</div>
-				<div class="clear"></div>
-				<div class="tabs">
-					<!-- Radio button and lable for #tab-content1 -->
-					<input type="radio" name="tabs" id="tab1" checked >
-					<label class="first" for="tab1">
-						<span>Product Description</span>
-					</label>
-				 
-					<!-- Radio button and lable for #tab-content2 -->
-					<input type="radio" name="tabs" id="tab2">
-					<label for="tab2">
-						<span>Highlights</span>
-					</label>
-				 
-					<!-- Radio button and lable for #tab-content3 -->
-					<input type="radio" name="tabs" id="tab3">
-					<label for="tab3">
-						<span>Fine Print</span>
-					</label>
-				 
-					<div id="tab-content1" class="tab-content">
-						<p><?php echo $renderDescription; ?></p>
-					</div> <!-- #tab-content1 -->
-					<div id="tab-content2" class="tab-content">
-						<p><?php echo $highlight; ?></p>
-					</div> <!-- #tab-content2 -->
-					<div id="tab-content3" class="tab-content">
-						<p><?php echo $fineprint; ?></p>
-					</div> <!-- #tab-content3 -->
-				</div>
-				<div class="clear"></div>
-				<div class="cta-section"><div class="col-8 name"><h3><?php echo $_product->getName().', Save '.$discount . '%'; ?></h3></div><div class="col-4 button">
-				<?php   
-				if($productQuantiy!=  '' || $productQuantiy != 0) { ?>
-						<?php if($_product->getOptions()) { ?>                                
-								<a onclick="showCustomoptions();" href='JavaScript:void(0);' id="scriptbuynow-<?php echo $count; ?>" class="buynowbtn see_option small"><?php echo $this->__("See Options") ?></a>                                
-						<?php } else { ?>
-								<?php if($sp_price !=0){ ?>
-								<a href='<?php echo $this->helper('checkout/cart')->getAddUrl($_product); ?>' id="scriptbuynow-<?php echo $count; ?>" class="buynowbtn small"><?php echo $this->__("BUY NOW!") ?></a>
-								<?php } else { ?>
-								 <a href='<?php echo $this->helper('checkout/cart')->getAddUrl($_product); ?>' id="scriptbuynow-<?php echo $count; ?>" class="buynowbtn small"><?php echo $this->__("Free!") ?></a>
-						<?php } }?>
-				<?php } else { ?>
-				<span class="sold_out">Sold Out</span>
-				<?php } ?></div>
-				</div>
-				
+                        </div> 
 <?php 
 }
 ?>
